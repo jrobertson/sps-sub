@@ -8,10 +8,11 @@ require 'websocket-eventmachine-client'
 
 class SPSSub
 
-  def initialize(port: '59000', host: nil, address: nil)
+  def initialize(port: '59000', host: nil, address: nil, callback: nil)
 
     @host = host || address || 'localhost'
     @port = port.to_s
+    @callback = callback
 
   end
 
@@ -32,9 +33,18 @@ class SPSSub
       ws.onmessage do |fqm, type|
         
         topic, msg = fqm.split(/:\s+/,2)
-        onmessage msg
-        ontopic topic, msg
         
+        EM.defer do
+          
+          if @callback then
+            @callback.ontopic(topic, msg)
+          else
+            onmessage msg
+            ontopic topic, msg
+          end
+          
+        end
+                
       end
 
       ws.onclose do

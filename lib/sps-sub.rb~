@@ -29,8 +29,12 @@ class SPSSub
         puts "Connected"
       end
 
-      ws.onmessage do |msg, type|
+      ws.onmessage do |fqm, type|
+        
+        topic, msg = fqm.split(/:\s+/,2)
         onmessage msg
+        ontopic topic, msg
+        
       end
 
       ws.onclose do
@@ -44,10 +48,18 @@ class SPSSub
     end
   end
 
+  # This method is called when a new message is received
+  #
   def onmessage(msg)
     puts "Received message: #{msg}"
   end
+  
+  # Same as onmessage but includes the topic as well as the msg
+  #
+  def ontopic(topic, msg)
 
+  end
+  
 end
 
 if __FILE__ == $0 then
