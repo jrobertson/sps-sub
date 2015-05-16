@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+
+# file: sps-sub.rb
+
+require 'websocket-eventmachine-client'
+
+
+
+class SPSSub
+
+  def initialize(port: '59000', host: nil, address: nil)
+
+    @host = host || address || 'localhost'
+    @port = port.to_s
+
+  end
+
+  def subscribe(topic: nil)
+
+    host, port = @host, @port 
+
+    EM.run do
+
+      address = host + ':' + port
+
+      ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://' + address)
+
+      ws.onopen do
+        puts "Connected"
+      end
+
+      ws.onmessage do |msg, type|
+        onmessage msg
+      end
+
+      ws.onclose do
+        puts "Disconnected"
+      end
+
+      EventMachine.next_tick do
+        ws.send 'subscribe to topic: ' + topic
+      end
+
+    end
+  end
+
+  def onmessage(msg)
+    puts "Received message: #{msg}"
+  end
+
+end
+
+if __FILE__ == $0 then
+
+  sps = SPSSub.new port: 8080
+
+  def sps.onmessage(msg)
+    puts "%s: %s"  % [Time.now.to_s, msg.inspect]
+  end
+
+  sps.subscribe topic: 'test'
+
+end
