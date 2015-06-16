@@ -5,7 +5,6 @@
 require 'websocket-eventmachine-client'
 
 
-
 class SPSSub
 
   def initialize(port: '59000', host: nil, address: nil, callback: nil)
@@ -16,7 +15,7 @@ class SPSSub
 
   end
 
-  def subscribe(topic: nil)
+  def subscribe(topic: nil, &blk)
 
     host, port = @host, @port 
 
@@ -36,7 +35,9 @@ class SPSSub
         
         EM.defer do
           
-          if @callback then
+          if block_given? then
+            blk.call(msg, topic)
+          elsif @callback
             @callback.ontopic(topic, msg)
           else
             onmessage msg
