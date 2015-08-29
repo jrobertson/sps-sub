@@ -13,7 +13,22 @@ class SPSSub
     @port = port.to_s
     @callback = callback
     
+    # Trap ^C 
+    Signal.trap("INT") { 
+      puts ' ... Bye'
+      @status = :quit
+      exit
+    }
+    
+    # Trap `Kill `
+    Signal.trap("TERM") {
+      @status = :quit
+      exit
+    }    
+    
   end
+
+
 
   def subscribe(topic: nil, &blk)
 
@@ -25,6 +40,7 @@ class SPSSub
   
   def em_connect(topic, &blk)
     
+    client = self
     host, port = @host, @port 
     
     EM.run do
@@ -58,8 +74,11 @@ class SPSSub
 
       ws.onclose do
         puts "Disconnected"
-        sleep 2
-        puts 'retrying to connect ... '; em_connect topic if @t + 5 > Time.now
+
+        return if @status == :quit
+        sleep 2            
+        puts 'retrying to connect ... '
+        client.em_connect topic 
       end
       
       ws.onerror do |error|

@@ -12,13 +12,21 @@ class SPSSub
     @host = host || address || 'localhost'
     @port = port.to_s
     @callback = callback
-
+    
   end
 
   def subscribe(topic: nil, &blk)
 
-    host, port = @host, @port 
+    
+    @t = Time.now
 
+    em_connect(topic, &blk)
+  end
+  
+  def em_connect(topic, &blk)
+    
+    host, port = @host, @port 
+    
     EM.run do
 
       address = host + ':' + port
@@ -50,13 +58,19 @@ class SPSSub
 
       ws.onclose do
         puts "Disconnected"
+        sleep 2
+        puts 'retrying to connect ... '; em_connect topic if @t + 5 > Time.now
+      end
+      
+      ws.onerror do |error|
+        puts "Error occured: #{error}"
       end
 
       EventMachine.next_tick do
         ws.send 'subscribe to topic: ' + topic
       end
 
-    end
+    end    
   end
 
   # This method is called when a new message is received
