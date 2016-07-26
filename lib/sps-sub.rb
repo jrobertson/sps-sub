@@ -55,7 +55,7 @@ class SPSSub
 
       ws.onmessage do |fqm, type|
         
-        topic, msg = fqm.split(/:\s+/,2)
+        topic, msg = fqm.split(/:\s/,2)
         
         EM.defer do
           
