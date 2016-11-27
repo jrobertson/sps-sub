@@ -30,7 +30,7 @@ class SPSSub
 
 
 
-  def subscribe(topic: nil, &blk)
+  def subscribe(topic: '#', &blk)
 
     
     @t = Time.now
