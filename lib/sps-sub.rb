@@ -12,6 +12,7 @@ class SPSSub
     @host = host || address || 'localhost'
     @port = port.to_s
     @callback = callback
+    @retry_interval = 1
     
     # Trap ^C 
     Signal.trap("INT") { 
@@ -28,10 +29,15 @@ class SPSSub
     
   end
 
-
+  def notice(s)
+    
+    EventMachine.next_tick do
+      @ws.send s
+    end    
+    
+  end
 
   def subscribe(topic: '#', &blk)
-
     
     @t = Time.now
 
@@ -47,7 +53,7 @@ class SPSSub
 
       address = host + ':' + port
 
-      ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://' + address)
+      @ws = ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://' + address)
 
       ws.onopen do
         puts "Connected"
@@ -76,8 +82,12 @@ class SPSSub
         puts "Disconnected"
 
         return if @status == :quit
-        sleep 2            
-        puts 'retrying to connect ... '
+        
+        @retry_interval *= 2        
+        sleep @retry_interval        
+        @retry_interval = 1 if @retry_interval > 30
+  
+        puts "retrying to connect to #{@host}:#{@port}... "
         client.em_connect topic 
       end
       
