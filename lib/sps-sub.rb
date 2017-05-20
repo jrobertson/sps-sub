@@ -7,12 +7,20 @@ require 'websocket-eventmachine-client'
 
 class SPSSub
 
-  def initialize(port: '59000', host: nil, address: nil, callback: nil)
+  def initialize(hosts: [], port: '59000', host: nil, address: nil, callback: nil )
 
-    @host = host || address || 'localhost'
-    @port = port.to_s
+    if host.nil? and address.nil? and hosts.any? then
+      hostx, portx = hosts.first.split(':',2)
+      portx ||= port
+      @host, @port = hostx, portx
+    else
+      @host = host || address || 'localhost'
+      @port = port.to_s
+    end
+    
     @callback = callback
     @retry_interval = 1
+    @hosts = hosts
     
     # Trap ^C 
     Signal.trap("INT") { 
@@ -83,12 +91,21 @@ class SPSSub
 
         return if @status == :quit
         
-        @retry_interval *= 2        
-        sleep @retry_interval        
-        @retry_interval = 1 if @retry_interval > 30
-  
-        puts "retrying to connect to #{@host}:#{@port}... "
-        client.em_connect topic 
+        if @hosts.any? then
+          
+          hostx, portx = @hosts.rotate!.first.split(':',2)
+          portx ||= @port
+          @host, @port = hostx, portx
+          client.em_connect topic
+          
+        else
+          @retry_interval *= 2        
+          sleep @retry_interval        
+          @retry_interval = 1 if @retry_interval > 30
+    
+          puts "retrying to connect to #{@host}:#{@port}... "
+          client.em_connect topic
+        end
       end
       
       ws.onerror do |error|
