@@ -7,8 +7,11 @@ require 'websocket-eventmachine-client'
 
 class SPSSub
 
-  def initialize(hosts: [], port: '59000', host: nil, address: nil, callback: nil )
+  def initialize(hosts: [], port: '59000', host: nil, address: nil, 
+                 callback: nil, log: nil )
 
+    log.info 'SPSSub/initialize: active' if log
+    
     if host.nil? and address.nil? and hosts.any? then
       hostx, portx = hosts.first.split(':',2)
       portx ||= port
@@ -21,6 +24,7 @@ class SPSSub
     @callback = callback
     @retry_interval = 1
     @hosts = hosts
+    @log = log
     
     # Trap ^C 
     Signal.trap("INT") { 
@@ -55,7 +59,7 @@ class SPSSub
   def em_connect(topic, &blk)
     
     client = self
-    host, port = @host, @port 
+    host, port, log = @host, @port, @log
     
     EM.run do
 
@@ -64,7 +68,9 @@ class SPSSub
       @ws = ws = WebSocket::EventMachine::Client.connect(:uri => 'ws://' + address)
 
       ws.onopen do
-        puts "Connected"
+        status_msg = "Connected"
+        puts status_msg
+        log.info 'SPSSub/em_connect: onopen: ' + status_msg if log
       end
 
       ws.onmessage do |fqm, type|
@@ -87,7 +93,8 @@ class SPSSub
       end
 
       ws.onclose do
-        puts "Disconnected"
+        status_msg = "Disconnected"
+        log.info 'SPSSub/em_connect: onclose: ' + status_msg if log
 
         return if @status == :quit
         
@@ -103,13 +110,18 @@ class SPSSub
           sleep @retry_interval        
           @retry_interval = 1 if @retry_interval > 30
     
-          puts "retrying to connect to #{@host}:#{@port}... "
+          status_msg = "retrying to connect to #{@host}:#{@port}... "
+          puts status_msg
+          log.info 'SPSSub/em_connect: onclose' + status_msg if log
           client.em_connect topic
         end
       end
       
       ws.onerror do |error|
-        puts "Error occured: #{error}"
+        status_msg = "Error occured: #{error}"
+        puts status_msg
+        
+        log.info 'SPSSub/em_connect: onerror: ' + status_msg if log
       end
 
       EventMachine.next_tick do
