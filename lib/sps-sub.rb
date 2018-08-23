@@ -80,7 +80,7 @@ class SPSSub
         EM.defer do
           
           if block_given? then
-            blk.call(msg, topic)
+            blk.call(msg.to_s, topic.to_s)
           elsif @callback
             @callback.ontopic(topic, msg)
           else

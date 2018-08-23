@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'sps-sub'
-  s.version = '0.3.6'
+  s.version = '0.3.7'
   s.summary = 'Subscribes to a SimplePubsub (SPS) broker'
   s.authors = ['James Robertson']
   s.files = Dir['lib/sps-sub.rb']
